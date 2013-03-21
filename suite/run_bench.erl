@@ -71,8 +71,14 @@ main() ->
                     Dur = timer:now_diff(now(), T0)/1000,
                     Coordinator ! {done, {Return, Dur}}
         end,
-        RecordFun = fun(Text, Times) -> 
-                io:format(MF, "(~w) ~w ", [Text, lists:min(Times)])
+        RecordFun = fun(Text, Times) ->
+                PTimes = lists:min(Times),
+                case Text of
+                    {Str, L} -> 
+                        io:format(MF, "(~p ~w) ~w ", [Str, L, PTimes]);
+                    _ ->
+                        io:format(MF, "(~w) ~w ", [Text, PTimes])
+                end
         end,
         Fun =
             fun(Bargs) ->
