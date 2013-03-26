@@ -23,14 +23,15 @@ bench_args(Version, _) ->
 	TableTypes = case Version of
 		short -> [set, ordered_set];
 		intermediate -> [set, ordered_set ];
-		long -> [set, ordered_set ]
+		long -> [set, ordered_set, {gi, null}, {gi, skiplist}, {gi, btreeset}, {gi, stlset}, {gi, stlhashset}]
 	end,
 	%% use deterministic seed for reproducable results
 	Seed = {0,0,0},
 	%% use random seed for varying input
 	%Seed = now(), % this currently breaks graph creation
-	ConcurrencyOptions = [no, rw], % options are: no, r, w, rw
-	[[TT,KeyRange,InsDels,MixedOps,M,C,Processes,Seed] || TT <- TableTypes, C <- ConcurrencyOptions, M <- MixedOpsUpdates ].
+
+	ConcurrencyOptions = [r], % options are: no, r, w, rw
+	[[TT,KeyRange,InsDels,MixedOps,M,C,Processes,Seed] || TT <- TableTypes, C <- ConcurrencyOptions, M <- MixedOpsUpdates ] ++ [[set,KeyRange,InsDels,MixedOps,M,rw,Processes,Seed], [{gi, null},KeyRange,InsDels,MixedOps,M,rw,Processes,Seed] || M <- MixedOpsUpdates].
 
 run([TableType, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
 	% this is a setup
@@ -166,10 +167,13 @@ setup([[delete, Table, P, Seed], _T, K, W, _R, _U, _C, Procs | _ ]) ->
 	{{continue, ignore}, [run, delete, Name, Workers, Table, P, NextSeed]}.
 
 run_bench([insert | State]) ->
+	%erlang:display(insert),
 	run_insert(State);
 run_bench([lookup | State]) ->
+	%erlang:display(lookup),
 	run_lookup(State);
 run_bench([delete | State]) ->
+	%erlang:display(delete),
 	run_delete(State).
 
 run_insert([Name, Workers, Table, Part, Seed | _]) ->
