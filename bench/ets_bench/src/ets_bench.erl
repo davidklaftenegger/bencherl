@@ -31,9 +31,12 @@ bench_args(Version, _) ->
 	%Seed = now(), % this currently breaks graph creation
 
 	ConcurrencyOptions = [r], % options are: no, r, w, rw
-	[[TT,KeyRange,InsDels,MixedOps,M,C,Processes,Seed] || TT <- TableTypes, C <- ConcurrencyOptions, M <- MixedOpsUpdates ] ++ [[set,KeyRange,InsDels,MixedOps,M,rw,Processes,Seed], [{gi, null},KeyRange,InsDels,MixedOps,M,rw,Processes,Seed] || M <- MixedOpsUpdates].
+	[[TT,KeyRange,InsDels,MixedOps,M,C,Processes,Seed] || TT <- TableTypes, C <- ConcurrencyOptions, M <- MixedOpsUpdates ]
+	++ [[set,KeyRange,InsDels,MixedOps,M,rw,Processes,Seed] || M <- MixedOpsUpdates]
+	++ [[{gi, null},KeyRange,InsDels,MixedOps,M,rw,Processes,Seed] || M <- MixedOpsUpdates].
 
-run([TableType, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
+
+run([Type, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
 	% this is a setup
 	{RC, WC} = case C of
 		no -> {false, false};
@@ -41,7 +44,13 @@ run([TableType, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
 		w -> {false, true};
 		rw -> {true, true}
 	end,
-	Options = [{read_concurrency, RC}, {write_concurrency, WC}],
+
+	ConcurrencyOptions = [{read_concurrency, RC}, {write_concurrency, WC}],
+	{TableType, SubType} = case Type of
+		{gi, Sub} -> {generic_interface, [{gi_type, Sub}]};
+		_ -> {Type, []}
+	end,
+	Options = SubType ++ ConcurrencyOptions,
 	Self = self(),
 	spawn(fun() -> table_process(Self, [TableType, public | Options]) end),
 	Table = receive {table, T} -> T end,
