@@ -25,8 +25,8 @@ bench_args(Version, _) ->
 	end,
 	TableTypes = case Version of
 		short -> [set, ordered_set];
-		intermediate -> [set, ordered_set ];
-		long -> [set, ordered_set ]
+		intermediate -> [set, ordered_set];
+		long -> [set, ordered_set, {gi, stlhashset}, {gi, stlset}]
 	end,
 	%% use deterministic seed for reproducable results
 	Seed = {0,0,0},
@@ -40,7 +40,7 @@ bench_args(Version, _) ->
 	end,
 	[[TT,KeyRange,InsDels,MixedOps,M,C,Processes,Seed] || TT <- TableTypes, C <- ConcurrencyOptions, M <- MixedOpsUpdates ].
 
-run([TableType, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
+run([Type, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
 	% this is a setup
 	{RC, WC} = case C of
 		no -> {false, false};
@@ -49,11 +49,16 @@ run([TableType, _K, _W, _R, _U, C, _Processes, Seed], _, _) ->
 		rw -> {true, true}
 	end,
 	Version = erlang:system_info(otp_release),
-	Options = if
+	ConcurrencyOptions = if
 		Version >= ?READ_CONCURRENCY_VERSION -> [{read_concurrency, RC}, {write_concurrency, WC}];
 		Version >= ?WRITE_CONCURRENCY_VERSION -> [{write_concurrency, WC}];
 		true -> []
 	end,
+	{TableType, SubType} = case Type of
+		{gi, Sub} -> {generic_interface, [{gi_type, Sub}]};
+		_ -> {Type, []}
+	end,
+	Options = SubType ++ ConcurrencyOptions,
 	Self = self(),
 	spawn(fun() -> table_process(Self, [TableType, public | Options]) end),
 	Table = receive {table, T} -> T end,
