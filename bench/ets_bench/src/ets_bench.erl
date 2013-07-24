@@ -21,7 +21,7 @@ bench_args(Version, _) ->
 	[KeyRange, InsDels, MixedOps] = case Version of
 		short -> [14, 15, 17];
 		intermediate -> [18, 18, 21];
-		long -> [21, 20, 22]
+		long -> [21, 20, 24]
 	end,
 	TableTypes = case Version of
 		short -> [set, ordered_set];
