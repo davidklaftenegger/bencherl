@@ -147,8 +147,7 @@ rbm()
     for otp in $OTPS; do
 	otpl=${otp%%=*}
 	otpv=${otp##*=}
-
-        for args in $ERL_ARGS; do
+	for args in $ERL_ARGS ${ERL_ARGS_PER_OTP["${otp%%=*}"]}; do
 	    argsl=${args%%=*}
 	    argsv=${args##*=}
 	    IFS=$OLD_IFS
@@ -418,6 +417,8 @@ while getopts ":b:chlm:s:n:pi" opt; do
   esac
 done
 
+# declare this array here so it can be used in the config file
+declare -A ERL_ARGS_PER_OTP
 source conf/run.conf
 
 CORES=`cat /proc/cpuinfo | grep processor | wc -l`
